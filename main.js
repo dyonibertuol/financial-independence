@@ -311,6 +311,7 @@ function generateChart(tableData) {
         type: 'line',
         data,
         options: {
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     ticks: {
