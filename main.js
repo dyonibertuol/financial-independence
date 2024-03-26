@@ -90,7 +90,7 @@ function generateAnalysisTexts(tableData) {
             createAndAppendElement('div', { role: 'alert', class: "alert alert-success" }, lifestyleMonthlyCostMessage, analysisDiv)
         } else {
             const lifestyleMonthlyCostMessage = `Considering your lifestyle monthly cost, you will reach your forever financial independence\
-            in <strong>${formatMonthYear(entry.referenceMonthYear)}</strong>.<br>\
+            in <strong>${formatLongMonthYear(entry.referenceMonthYear)}</strong>.<br>\
             That is <strong>${years ? (years + ' year' + (years > 1 ? 's' : '')) : ''}${(years && months) ? ' and ' : ''}${months ? (months + ' month' + (months > 1 ? 's' : '')) : ''}</strong> from the initial date.<br>\
             You will be <strong>${entry.age} years old</strong> and will have a net worth of <strong>${formatCurrency(entry.netWorth)}</strong>.`
             createAndAppendElement('div', { role: 'alert', class: "alert alert-info" }, lifestyleMonthlyCostMessage, analysisDiv)
@@ -103,6 +103,10 @@ function generateAnalysisTexts(tableData) {
 
 }
 
+function formatShortMonthIndex(monthIndex) {
+    return Math.floor(monthIndex / 12) + "y " + monthIndex % 12 + "m"
+}
+
 function generateHtmlTable(tableData) {
     const tableBody = document.getElementById("tableBody")
     tableBody.innerHTML = ''
@@ -110,8 +114,8 @@ function generateHtmlTable(tableData) {
     for (const tableRow of tableData) {
         const tr = createAndAppendElement('tr', null, null, tableBody)
         // createAndAppendElement('th', { scope: 'row', class: 'text-end' }, tableRow.monthIndex, tr)
-        createAndAppendElement('th', null, Math.floor(tableRow.monthIndex / 12) + "y " + tableRow.monthIndex % 12 + "m", tr)
-        createAndAppendElement('td', null, formatMonthYear(tableRow.referenceMonthYear), tr)
+        createAndAppendElement('th', null, formatShortMonthIndex(tableRow.monthIndex), tr)
+        createAndAppendElement('td', null, formatLongMonthYear(tableRow.referenceMonthYear), tr)
         createAndAppendElement('td', { class: 'text-end' }, tableRow.age, tr)
         createAndAppendElement('td', { class: 'text-end' }, formatCurrency(tableRow.netWorth), tr)
         createAndAppendElement('td', { class: 'text-end' }, formatCurrency(tableRow.netWorthWithoutInflationEffect), tr)
@@ -244,10 +248,12 @@ function addMonths(currentMonth, plusMonths) {
     return date
 }
 
-function formatMonthYear(monthYearDate) {
-    const year = monthYearDate.getFullYear()
-    const month = monthYearDate.toLocaleString('en-US', { month: 'long' })
-    return `${year} ${month}`
+function formatLongMonthYear(monthYearDate) {
+    return monthYearDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+}
+
+function formatShortMonthYear(monthYearDate) {
+    return monthYearDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })
 }
 
 function formatDateToHTMLYearMonth(yearMonthDate) {
@@ -299,7 +305,10 @@ function generateChart(tableData) {
     if (splitBy < 1) splitBy = 1
 
     const selectedEntries = tableData.filter(entry => entry.monthIndex % splitBy === 0)
-    const months = selectedEntries.map(entry => formatMonthYear(entry.referenceMonthYear) + " | " + entry.age + " years old")
+    const months = selectedEntries.map(entry =>
+        formatShortMonthYear(entry.referenceMonthYear) + " | " +
+        formatShortMonthIndex(entry.monthIndex) + " | " +
+        entry.age + "yo")
 
     const datasets = generateDatasets(selectedEntries)
     const labels = months
@@ -318,6 +327,11 @@ function generateChart(tableData) {
                         callback: function (value) {
                             return formatCurrency(value)
                         }
+                    }
+                },
+                x: {
+                    ticks: {
+                        minRotation: 90,
                     }
                 }
             },
